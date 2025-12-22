@@ -14,14 +14,13 @@ export interface UserProfile {
 
 export interface DiagnosisResult {
   disease: string;
-  scientific: string;
   confidence: number;
-  status: 'high' | 'medium' | 'low';
-  advice: string[];
-  alternatives?: { disease: string; confidence: number }[];
+  status: "high" | "medium" | "low";
   timestamp: string;
-  image?: string;
-}
+  image: string;
+  advice: string[];
+  scientific: string;
+};
 
 export interface MarketPrice {
   crop: string;
