@@ -12,41 +12,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import earlyBlightImg from '@/assets/early-blight.jpg';
 import yellowLeafSpotImg from '@/assets/yellow-leaf-spot.jpg';
+import axios from "axios";
 
 // Top Indian crops
 const CROPS = [
   'Tomato', 'Rice', 'Wheat', 'Maize', 'Cotton', 
-  'Sugarcane', 'Onion', 'Potato', 'Paddy', 'Groundnut'
+  'Sugarcane', 'Onion', 'Potato', 'Paddy', 'Groundnut', 'Pepper'
 ];
 
-// Sample diagnosis data for demo
-const SAMPLE_DIAGNOSES: Record<string, DiagnosisResult> = {
-  'Early Blight': {
-    disease: 'Early Blight',
-    scientific: 'Alternaria solani',
-    confidence: 0.89,
-    status: 'high',
-    advice: [
-      'Remove and destroy infected leaves immediately',
-      'Apply copper-based fungicide every 7-10 days',
-      'Ensure proper spacing between plants for air circulation'
-    ],
-    timestamp: new Date().toISOString(),
-    image: earlyBlightImg
+// Map API disease to scientific name and advice
+const DISEASE_INFO: Record<string, { scientific: string, advice: string[] }> = {
+  Baterial_Spot_Detected: {
+    scientific: "Xanthomonas campestris",
+    advice: ["Remove infected areas", "Use copper-based fungicides"]
   },
-  'Yellow Leaf Spot': {
-    disease: 'Yellow Leaf Spot',
-    scientific: 'Mycosphaerella musicola',
-    confidence: 0.76,
-    status: 'medium',
-    advice: [
-      'Remove affected leaves to prevent spread',
-      'Improve drainage and reduce overhead watering',
-      'Apply potassium-rich fertilizer to strengthen plants'
-    ],
-    timestamp: new Date().toISOString(),
-    image: yellowLeafSpotImg
-  }
+  Pepper_healthy: {
+    scientific: "Capsicum annuum",
+    advice: ["No action needed"]
+  },
+  Potato_early_blight: {
+    scientific: "Alternaria solani",
+    advice: ["Destroy infected leaves", "Apply recommended fungicide"]
+  },
+  Potato_healthy: {
+    scientific: "Solanum tuberosum",
+    advice: ["No action needed"]
+  },
 };
 
 export default function Diagnosis() {
@@ -56,18 +47,15 @@ export default function Diagnosis() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [selectedCrop, setSelectedCrop] = useState<string>('');
   const [diagnosisCards, setDiagnosisCards] = useState<DiagnosisResult[]>([]);
 
   useEffect(() => {
-    // Handle image passed from chat
     const file = location.state?.file;
-    if (file) {
-      handleFile(file);
-    }
+    if (file) handleFile(file);
   }, [location.state]);
 
+  // Reads uploaded file and sets selectedImage as DataURL
   const handleFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -79,89 +67,85 @@ export default function Diagnosis() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      handleFile(file);
-    }
+    if (file) handleFile(file);
   };
 
+  // Calls FastAPI ML backend for actual crop image prediction
   const handleAnalyze = async () => {
     if (!selectedImage || !selectedCrop) {
-      toast({ 
-        title: "Missing information", 
-        description: "Please select a crop first",
+      toast({
+        title: "Missing information",
+        description: "Please select a crop and image",
         variant: "destructive"
       });
       return;
     }
 
     setIsAnalyzing(true);
-    
-    // Simulate API delay for demo
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Use sample data for demo
-    const sampleKeys = Object.keys(SAMPLE_DIAGNOSES);
-    const randomSample = SAMPLE_DIAGNOSES[sampleKeys[Math.floor(Math.random() * sampleKeys.length)]];
-    
-    const newDiagnosis: DiagnosisResult = {
-      ...randomSample,
-      image: selectedImage,
-      timestamp: new Date().toISOString()
-    };
+    // Convert base64 DataURL to Blob
+    const byteString = atob(selectedImage.split(',')[1]);
+    const mimeString = selectedImage.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeString });
 
-    // Add to diagnosis cards array
-    setDiagnosisCards(prev => [...prev, newDiagnosis]);
+    const formData = new FormData();
+    formData.append("image", blob, "uploaded.jpg");
 
-    // Save to history
-    saveToHistory({
-      id: Date.now().toString(),
-      query: `${selectedCrop} diagnosis`,
-      type: 'diagnosis',
-      timestamp: new Date().toISOString(),
-      preview: newDiagnosis.disease,
-      data: newDiagnosis
-    });
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/predict", formData);
+      const data = res.data;
 
-    toast({ 
-      title: newDiagnosis.status === 'high' ? "✓ High confidence" : "⚠ Medium confidence",
-      description: newDiagnosis.disease
-    });
+      // Confidence to status; ensures correct TS union type
+      let status: "high" | "medium" | "low" =
+        data.confidence >= 0.8 ? "high"
+        : data.confidence >= 0.5 ? "medium"
+        : "low";
+
+      // Optional mapping: get scientific name/advice per disease
+      const info = DISEASE_INFO[data.predicted_disease] || { scientific: '', advice: [] };
+
+      const newDiagnosis: DiagnosisResult = {
+        disease: data.predicted_disease,
+        confidence: data.confidence,
+        status,
+        timestamp: new Date().toISOString(),
+        image: selectedImage!,
+        advice: info.advice,
+        scientific: info.scientific,
+      };
+
+      setDiagnosisCards(prev => [...prev, newDiagnosis]);
+      saveToHistory({
+        id: Date.now().toString(),
+        query: `${selectedCrop} diagnosis`,
+        type: 'diagnosis',
+        timestamp: new Date().toISOString(),
+        preview: newDiagnosis.disease,
+        data: newDiagnosis
+      });
+
+      toast({
+        title: newDiagnosis.status === 'high' ? "✓ High confidence" : "⚠ Medium/Low confidence",
+        description: newDiagnosis.disease
+      });
+    } catch (err) {
+      toast({
+        title: "Prediction failed",
+        description: err?.toString(),
+        variant: "destructive"
+      });
+    }
 
     setIsAnalyzing(false);
     setSelectedImage(null);
     setSelectedCrop('');
   };
 
-  const handleUseSample = async (sampleData: DiagnosisResult) => {
-    setIsAnalyzing(true);
-    
-    // Simulate API delay for realistic demo
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newDiagnosis = {
-      ...sampleData,
-      timestamp: new Date().toISOString()
-    };
-
-    setDiagnosisCards(prev => [...prev, newDiagnosis]);
-
-    // Save to history
-    saveToHistory({
-      id: Date.now().toString(),
-      query: 'Sample crop diagnosis',
-      type: 'diagnosis',
-      timestamp: new Date().toISOString(),
-      preview: sampleData.disease,
-      data: newDiagnosis
-    });
-
-    toast({ 
-      title: sampleData.status === 'high' ? "✓ High confidence" : "⚠ Medium confidence",
-      description: sampleData.disease
-    });
-
-    setIsAnalyzing(false);
-  };
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -263,76 +247,6 @@ export default function Diagnosis() {
                     </div>
                   </div>
                 </Card>
-
-                {/* Demo Cards Section */}
-                <div className="space-y-4 mt-8">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold mb-2">Try Sample Diagnoses</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Click on a sample to see instant diagnosis
-                    </p>
-                  </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {Object.values(SAMPLE_DIAGNOSES).map((sample, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Card 
-                          className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-primary/50"
-                          onClick={() => handleUseSample(sample)}
-                        >
-                          <CardContent className="p-4">
-                            <img 
-                              src={sample.image} 
-                              alt={sample.disease}
-                              className="w-full h-40 object-cover rounded-lg mb-3"
-                            />
-                            <div className="space-y-2">
-                              <div>
-                                <h4 className="font-semibold text-lg">{sample.disease}</h4>
-                                <p className="text-xs text-muted-foreground">{sample.scientific}</p>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <div className="text-xs font-medium">
-                                  Confidence: {Math.round(sample.confidence * 100)}%
-                                </div>
-                                <div className={`h-2 w-2 rounded-full ${
-                                  sample.status === 'high' ? 'bg-success' :
-                                  sample.status === 'medium' ? 'bg-warning' : 'bg-destructive'
-                                }`} />
-                              </div>
-
-                              <div className="text-xs space-y-1 text-muted-foreground">
-                                {sample.advice.slice(0, 2).map((advice, i) => (
-                                  <div key={i}>• {advice}</div>
-                                ))}
-                              </div>
-
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full mt-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleUseSample(sample);
-                                }}
-                              >
-                                View Full Diagnosis
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
 
                 <div className="text-center text-sm text-muted-foreground">
                   <p>📸 Tips for best results:</p>

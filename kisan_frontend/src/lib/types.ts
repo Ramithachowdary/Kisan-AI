@@ -1,14 +1,16 @@
 export interface UserProfile {
+  id: number;
+  phone: string;
   name: string;
-  mobile: string;
-  village: string;
-  district: string;
   state: string;
-  landSize: string;
-  mainCrops: string[];
+  district: string;
+  village: string;
+  land_size: number;
+  crops: string;        // comma-separated
   language: string;
-  useDemoData: boolean;
+  profile_complete: boolean;
 }
+
 
 export interface DiagnosisResult {
   disease: string;

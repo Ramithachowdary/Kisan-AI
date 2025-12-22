@@ -1,4 +1,3 @@
-# app/routes/login_routes.py
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -12,7 +11,7 @@ from app.routes.auth_utils import (
     hash_token,
 )
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 def get_db():
     db = SessionLocal()
@@ -20,56 +19,70 @@ def get_db():
         yield db
     finally:
         db.close()
+def is_profile_complete(user: User):
+    return all([
+        user.name,
+        user.state,
+        user.district,
+        user.village,
+        user.land_size,
+        user.crops,
+        user.language
+    ])
+
 
 @router.post("/login")
-def login_with_firebase(authorization: str = Header(None), db: Session = Depends(get_db)):
-    # Validate header
+def login_firebase(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing auth token")
-    firebase_token = authorization.split(" ", 1)[1]
 
-    # Verify Token
+    firebase_token = authorization.split(" ")[1]
+
     try:
         decoded = verify_firebase_token(firebase_token)
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {e}")
 
-    firebase_uid = decoded.get("uid") or decoded.get("user_id") or decoded.get("sub")
-    phone_number = decoded.get("phone_number") or decoded.get("phone")
+    firebase_uid = decoded.get("uid")
+    phone = decoded.get("phone_number")
 
     if not firebase_uid:
-        raise HTTPException(status_code=400, detail="Firebase token did not contain uid")
+        raise HTTPException(status_code=400, detail="Invalid Firebase UID")
 
-    # Find or create user
-    try:
-        user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
-    except Exception as e:
-        # DB schema mismatch will raise here
-        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
 
     if not user:
-        user = User(firebase_uid=firebase_uid, phone=phone_number, name=None)
+        user = User(
+            firebase_uid=firebase_uid,
+            phone=phone,
+            name=None
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
 
-    # Create access + refresh tokens
+    # Issue tokens
     access_token = create_access_token({"sub": str(user.id)})
+
     refresh_raw = create_refresh_token()
     refresh_hash = hash_token(refresh_raw)
 
-    refresh_entry = RefreshToken(
+    refresh_item = RefreshToken(
         user_id=user.id,
         token_hash=refresh_hash,
         created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(days=30)
+        expires_at=datetime.utcnow() + timedelta(days=30),
     )
-    db.add(refresh_entry)
+
+    db.add(refresh_item)
     db.commit()
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_raw,
-        "user_id": user.id,
-        "profile_complete": bool(user.name and user.state)
+        "profile_complete": is_profile_complete(user)
     }

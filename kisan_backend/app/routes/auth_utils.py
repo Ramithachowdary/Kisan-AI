@@ -11,7 +11,7 @@ from jose import jwt
 
 # Config from env
 FIREBASE_CRED_JSON = os.environ.get("FIREBASE_CRED_JSON", "./firebase_admin.json")
-SECRET_KEY = os.environ.get("SECRET_KEY", "replace_this_secret")
+SECRET_KEY = os.environ["SECRET_KEY"]
 ALGORITHM = os.environ.get("ALGORITHM", "HS256")
 ACCESS_EXPIRE_MINUTES = int(os.environ.get("ACCESS_EXPIRE_MINUTES", "60"))
 

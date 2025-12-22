@@ -11,8 +11,7 @@ const navItems = [
   { path: '/diagnosis', label: 'Crop Advisory', icon: Camera },
   { path: '/market', label: 'Market Prices', icon: TrendingUp },
   { path: '/schemes', label: 'Govt Schemes', icon: FileText },
-  { path: '/history', label: 'History', icon: History },
-  { path: '/help', label: 'Help', icon: HelpCircle },
+  { path: '/history', label: 'Help & History', icon: History },
   { path: '/profile', label: 'Profile', icon: User },
 ];
 

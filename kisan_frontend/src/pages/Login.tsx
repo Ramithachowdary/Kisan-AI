@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { saveProfile } from "@/lib/storage";
 
 import { ArrowLeft, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -55,38 +56,48 @@ export default function Login() {
   // --------------------------
   // VERIFY OTP & LOGIN BACKEND
   // --------------------------
-  const handleLogin = async () => {
-    if (!otp) {
-      toast({ title: "Enter OTP", variant: "destructive" });
-      return;
-    }
+const handleLogin = async () => {
+  if (!otp) {
+    toast({ title: "Enter OTP", variant: "destructive" });
+    return;
+  }
 
-    try {
-      const result = await window.confirmationResult.confirm(otp);
-      const idToken = await result.user.getIdToken(true);
+  try {
+    const result = await window.confirmationResult.confirm(otp);
+    const idToken = await result.user.getIdToken(true);
 
-      const res = await api.post(
-        "/auth/login",
-        {},
-        {
-          headers: { Authorization: `Bearer ${idToken}` },
-        }
-      );
-
-      saveTokens(res.data.access_token, res.data.refresh_token);
-
-      toast({ title: "Login Successful!" });
-
-      if (res.data.profile_complete === false) {
-        navigate("/onboarding");
-      } else {
-        navigate("/dashboard");
+    const res = await api.post(
+      "/auth/login",
+      {},
+      {
+        headers: { Authorization: `Bearer ${idToken}` },
       }
-    } catch (err) {
-      console.error("OTP VERIFY ERROR:", err);
-      toast({ title: "Invalid OTP", variant: "destructive" });
+    );
+
+    // 1️⃣ Save tokens
+    saveTokens(res.data.access_token, res.data.refresh_token);
+
+    // 2️⃣ FETCH PROFILE FROM BACKEND
+    const profileRes = await api.get("/user/profile");
+
+    // 3️⃣ SAVE PROFILE LOCALLY (THIS WAS MISSING)
+    saveProfile(profileRes.data);
+
+    toast({ title: "Login Successful!" });
+
+    // 4️⃣ Navigate based on completion
+    if (res.data.profile_complete === false) {
+      navigate("/onboarding");
+    } else {
+      navigate("/dashboard");
     }
-  };
+
+  } catch (err) {
+    console.error("OTP VERIFY ERROR:", err);
+    toast({ title: "Invalid OTP", variant: "destructive" });
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 flex items-center justify-center p-4 relative">
