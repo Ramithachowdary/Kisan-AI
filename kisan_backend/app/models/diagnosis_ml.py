@@ -3,8 +3,15 @@ from PIL import Image
 import numpy as np
 import os
 
-# Load model ONCE at module level
-MODEL_PATH = r"C:\Users\admin\KisanAI\kisan_backend\app\models\Model_Cnn.h5"  # Change path if needed
+# Load model ONCE at module 
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # adjust if needed
+MODEL_PATH = os.path.join(BASE_DIR, "models", "Model_Cnn.h5")
+
+# or, if your structure is app/models/Model_Cnn.h5 and code is in app/
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "Model_Cnn.h5")
+
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Get class names (match order that Keras used during training)
