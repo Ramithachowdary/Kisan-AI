@@ -17,6 +17,7 @@ kisan_backend/firebase_admin.json
 .DS_Store
 .idea/
 
+/Model/Dataset/
 # Kisan Backend specific ignores
 kisan_backend/__pycache__/
 kisan_backend/migrations/__pycache__/

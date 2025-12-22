@@ -29,17 +29,22 @@ export default function Profile() {
       navigate('/onboarding');
     }
   }, [navigate]);
+  const selectedCrops = profile?.crops ? profile.crops.split(","): [];
 
-  const handleCropToggle = (crop: string) => {
-    if (!profile) return;
-    
-    setProfile({
-      ...profile,
-      mainCrops: profile.mainCrops.includes(crop)
-        ? profile.mainCrops.filter(c => c !== crop)
-        : [...profile.mainCrops, crop]
-    });
-  };
+
+const handleCropToggle = (crop: string) => {
+  if (!profile) return;
+
+  const crops = selectedCrops.includes(crop)
+    ? selectedCrops.filter(c => c !== crop)
+    : [...selectedCrops, crop];
+
+  setProfile({
+    ...profile,
+    crops: crops.join(","),
+  });
+};
+
 
   const handleSave = () => {
     if (profile) {
@@ -68,8 +73,8 @@ export default function Profile() {
             <Label htmlFor="mobile">Mobile Number</Label>
             <Input
               id="mobile"
-              value={profile.mobile}
-              onChange={e => setProfile({ ...profile, mobile: e.target.value })}
+              value={profile.phone}
+              onChange={e => setProfile({ ...profile, phone: e.target.value })}
             />
           </div>
 
@@ -112,8 +117,8 @@ export default function Profile() {
             <Label htmlFor="land">Land Size (acres)</Label>
             <Input
               id="land"
-              value={profile.landSize}
-              onChange={e => setProfile({ ...profile, landSize: e.target.value })}
+              value={profile.land_size}
+              onChange={e => setProfile({ ...profile, land_size: Number(e.target.value) })}
             />
           </div>
 
@@ -126,7 +131,7 @@ export default function Profile() {
                   className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-muted"
                 >
                   <Checkbox
-                    checked={profile.mainCrops.includes(crop)}
+                    checked={selectedCrops.includes(crop)}
                     onCheckedChange={() => handleCropToggle(crop)}
                   />
                   <span className="text-sm">{crop}</span>
@@ -159,11 +164,6 @@ export default function Profile() {
                 Use mock API responses for testing
               </p>
             </div>
-            <Switch
-              id="demo"
-              checked={profile.useDemoData}
-              onCheckedChange={val => setProfile({ ...profile, useDemoData: val })}
-            />
           </div>
 
           <Button onClick={handleSave} className="w-full">

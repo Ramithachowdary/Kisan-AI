@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from dotenv import load_dotenv
+load_dotenv()
 from app.models import models
 from app.models.database import engine
 
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8080",
         "http://127.0.0.1:8080",
+        "http://192.168.232.1:8080",
         "*"
     ],
     allow_credentials=True,
@@ -42,6 +44,9 @@ app.include_router(help_router)
 app.include_router(voice_agent_router)
 
 
+
 @app.get("/")
 def root():
     return {"message": "Kisan+ Backend Running"}
+
+

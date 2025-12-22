@@ -19,6 +19,7 @@ import Schemes from "./pages/Schemes";
 import HelpAndHistory from "./pages/HelpAndHistory";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import AuthFlow from "./pages/AuthFlow";
 import { Navbar } from "./components/Navbar";
 
 const queryClient = new QueryClient();
@@ -112,6 +113,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/auth" element={<AuthFlow />} />
           </Route>
           
           {/* Protected routes with TopNavbar, Sidebar (desktop), and BottomNavbar (mobile) */}

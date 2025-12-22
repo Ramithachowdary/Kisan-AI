@@ -17,12 +17,12 @@ import axios from "axios";
 // Top Indian crops
 const CROPS = [
   'Tomato', 'Rice', 'Wheat', 'Maize', 'Cotton', 
-  'Sugarcane', 'Onion', 'Potato', 'Paddy', 'Groundnut'
+  'Sugarcane', 'Onion', 'Potato', 'Paddy', 'Groundnut', 'Pepper'
 ];
 
 // Map API disease to scientific name and advice
 const DISEASE_INFO: Record<string, { scientific: string, advice: string[] }> = {
-  Pepper_bact_spot: {
+  Baterial_Spot_Detected: {
     scientific: "Xanthomonas campestris",
     advice: ["Remove infected areas", "Use copper-based fungicides"]
   },

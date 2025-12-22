@@ -6,8 +6,9 @@ from app.models.database import SessionLocal
 from app.models.models import User
 from sqlalchemy.orm import Session
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change_this_now")
-ALGORITHM = "HS256"
+SECRET_KEY = os.environ["SECRET_KEY"]
+ALGORITHM = os.environ.get("ALGORITHM", "HS256")
+
 
 security = HTTPBearer()
 
@@ -18,19 +19,15 @@ def get_db():
     finally:
         db.close()
 
+
 def get_current_user(
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    creds: HTTPAuthorizationCredentials = Depends(security)
 ):
     token = creds.credentials
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
+        return int(payload["sub"])
     except:
-        raise HTTPException(status_code=401, detail="Invalid access token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    return user
