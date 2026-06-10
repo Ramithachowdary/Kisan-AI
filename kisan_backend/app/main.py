@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 load_dotenv()
+from sqlalchemy import inspect, text
 from app.models import models
 from app.models.database import engine
 
@@ -17,16 +18,24 @@ from app.routes.voice_agent_routes import router as voice_agent_router
 
 models.Base.metadata.create_all(bind=engine)
 
+# Ensure legacy SQLite DB has the new password_hash column
+inspector = inspect(engine)
+if "users" in inspector.get_table_names():
+    columns = [col["name"] for col in inspector.get_columns("users")]
+    if "password_hash" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR"))
+
 app = FastAPI(title="Kisan+ Backend", version="1.0.0")
 
 # CORS MUST COME BEFORE ROUTERS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
         "http://localhost:8080",
         "http://127.0.0.1:8080",
-        "http://192.168.232.1:8080",
-        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],

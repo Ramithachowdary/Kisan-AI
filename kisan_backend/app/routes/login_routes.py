@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
 from app.models.database import SessionLocal
 from app.models.models import User, RefreshToken
 from app.routes.auth_utils import (
-    verify_firebase_token,
     create_access_token,
     create_refresh_token,
     hash_token,
@@ -31,39 +30,44 @@ def is_profile_complete(user: User):
     ])
 
 
+from pydantic import BaseModel
+from app.routes.auth_utils import hash_password, verify_password
+
+
+class LoginRequest(BaseModel):
+    phone: str
+    password: str
+
+
 @router.post("/login")
-def login_firebase(
-    authorization: str = Header(None),
+def login(
+    payload: LoginRequest,
     db: Session = Depends(get_db)
 ):
 
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing auth token")
+    phone = payload.phone
+    password = payload.password
 
-    firebase_token = authorization.split(" ")[1]
+    if not phone or not password:
+        raise HTTPException(status_code=400, detail="Missing phone or password")
 
-    try:
-        decoded = verify_firebase_token(firebase_token)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {e}")
-
-    firebase_uid = decoded.get("uid")
-    phone = decoded.get("phone_number")
-
-    if not firebase_uid:
-        raise HTTPException(status_code=400, detail="Invalid Firebase UID")
-
-    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+    user = db.query(User).filter(User.phone == phone).first()
 
     if not user:
+        # Register new user with provided phone and password
         user = User(
-            firebase_uid=firebase_uid,
+            firebase_uid=None,
             phone=phone,
-            name=None
+            name=None,
+            password_hash=hash_password(password),
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        # Verify password
+        if not verify_password(password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Issue tokens
     access_token = create_access_token({"sub": str(user.id)})

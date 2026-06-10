@@ -13,7 +13,6 @@ colorama==0.4.6
 cryptography==46.0.3
 ecdsa==0.19.1
 fastapi==0.120.0
-firebase_admin==7.1.0
 google-api-core==2.28.1
 google-auth==2.43.0
 google-cloud-core==2.5.0
@@ -63,7 +62,6 @@ annotated-doc==0.0.2
 annotated-types==0.7.0
 anyio==4.11.0
 click==8.3.0
-colorama==0.4.6
 fastapi==0.120.0
 greenlet==3.2.4
 h11==0.16.0
@@ -96,7 +94,6 @@ colorama==0.4.6
 cryptography==46.0.3
 ecdsa==0.19.1
 fastapi==0.120.0
-firebase_admin==7.1.0
 flatbuffers==25.9.23
 gast==0.6.0
 google-api-core==2.28.1

@@ -10,7 +10,7 @@ venv/
 # Environment variables
 .env
 kisan_backend/.env
-kisan_backend/firebase_admin.json
+# kisan_backend/firebase_admin.json (removed - Firebase no longer used)
 # Miscellaneous
 *.log
 *.sqlite3
@@ -29,7 +29,7 @@ kisan_backend/venv/
 kisan_backend/*.log
 kisan_backend/*.sqlite3
 kisan_backend/.env
-kisan_backend/firebase_admin.json
+# kisan_backend/firebase_admin.json (removed - Firebase no longer used)
 
 Model/Dataset
 Model/Dataset/*

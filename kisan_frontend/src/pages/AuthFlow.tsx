@@ -10,8 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useToast } from "@/hooks/use-toast";
-import { auth, initRecaptcha, sendOtpPhone } from "@/lib/firebase";
-
 import api from "@/lib/api";
 import { saveTokens } from "@/lib/storage";
 
@@ -31,8 +29,7 @@ export default function AuthFlow() {
   const [step, setStep] = useState<"login" | 1 | 2 | 3>("login");
   
   const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [password, setPassword] = useState("");
 
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
@@ -47,61 +44,36 @@ export default function AuthFlow() {
   });
 
   // ---------------------------------------------------------
-  // SEND OTP
+  // LOGIN (phone + password)
   // ---------------------------------------------------------
-  const handleSendOtp = async () => {
-    if (mobile.length !== 10) {
-      toast({ title: "Enter valid 10-digit mobile", variant: "destructive" });
+  const handleLogin = async () => {
+    if (mobile.length !== 10 || !password) {
+      toast({ title: "Enter valid mobile and password", variant: "destructive" });
       return;
     }
 
     try {
-      const verifier = initRecaptcha();
-      const confirmation = await sendOtpPhone("+91" + mobile, verifier);
-      window.confirmationResult = confirmation;
+      const res = await api.post("/auth/login", { phone: "+91" + mobile, password });
+      const { access_token, refresh_token, profile_complete } = res.data;
+      saveTokens(access_token, refresh_token);
 
-      setOtpSent(true);
-      toast({ title: "OTP Sent!" });
+      if (profile_complete) {
+        navigate("/dashboard");
+        return;
+      }
+
+      setStep(1);
+      toast({ title: "Logged in" });
     } catch (err) {
       console.error(err);
-      toast({ title: "Failed to send OTP", variant: "destructive" });
+      toast({ title: "Failed to login", variant: "destructive" });
     }
   };
 
   // ---------------------------------------------------------
   // VERIFY OTP → BACKEND LOGIN → CHECK PROFILE
   // ---------------------------------------------------------
-  const handleLogin = async () => {
-    if (!otp) {
-      toast({ title: "Enter OTP", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const result = await window.confirmationResult.confirm(otp);
-      const idToken = await result.user.getIdToken(true);
-
-      const res = await api.post(
-        "/auth/login",
-        {},
-        { headers: { Authorization: `Bearer ${idToken}` } }
-      );
-
-      saveTokens(res.data.access_token, res.data.refresh_token);
-
-      if (res.data.profile_complete) {
-        navigate("/dashboard");
-        return;
-      }
-
-      // NEW USER → SHOW ONBOARDING STEP 1
-      setStep(1);
-
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Invalid OTP", variant: "destructive" });
-    }
-  };
+  // Old Firebase OTP flow removed; login is handled directly via `handleSendOtp`.
 
   // ---------------------------------------------------------
   // CROPS
@@ -187,7 +159,6 @@ export default function AuthFlow() {
                 <p>Login to continue</p>
               </div>
 
-              {!otpSent ? (
                 <div className="space-y-4">
                   <Label>Mobile Number</Label>
                   <Input 
@@ -197,34 +168,18 @@ export default function AuthFlow() {
                     placeholder="10-digit mobile"
                   />
 
-                  <Button className="w-full py-5 text-lg" onClick={handleSendOtp}>
-                    Send OTP
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Label>Enter OTP</Label>
-                  <Input 
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                    placeholder="6-digit OTP"
-                    className="text-center tracking-widest text-lg"
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
                   />
 
                   <Button className="w-full py-5 text-lg" onClick={handleLogin}>
-                    Verify & Continue
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => { setOtpSent(false); setOtp(""); }}
-                  >
-                    Change Mobile Number
+                    Login / Register
                   </Button>
                 </div>
-              )}
             </>
           )}
 
@@ -334,7 +289,7 @@ export default function AuthFlow() {
         </Card>
       </motion.div>
 
-      <div id="recaptcha-container"></div>
+      
     </div>
   );
 }

@@ -2,7 +2,7 @@ import axios from "axios";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./storage";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE, // example: http://127.0.0.1:8000
+  baseURL: import.meta.env.VITE_API_BASE || import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000",
   withCredentials: false,
 });
 

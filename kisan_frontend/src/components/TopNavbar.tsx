@@ -44,7 +44,7 @@ export function TopNavbar() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => navigate('/onboarding')}
+                onClick={() => navigate('/login')}
                 className="bg-primary hover:bg-primary/90"
               >
                 Create Account

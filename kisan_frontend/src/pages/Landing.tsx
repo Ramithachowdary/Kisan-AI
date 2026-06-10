@@ -176,7 +176,7 @@ export default function Landing() {
           >
             <Button
               size="lg"
-              onClick={() => navigate('/onboarding')}
+              onClick={() => navigate('/login')}
               className="text-lg px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-105"
             >
               Get Started
@@ -250,7 +250,7 @@ export default function Landing() {
           >
             <Button
               size="lg"
-              onClick={() => navigate('/onboarding')}
+              onClick={() => navigate('/login')}
               className="text-lg px-12 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-105 bg-gradient-to-r from-primary to-secondary"
             >
               Start Using Kisan+ Now
