@@ -4,16 +4,8 @@ import { Home, Camera, TrendingUp, FileText, HelpCircle, User, Menu, X, LogOut, 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getProfile } from '@/lib/storage';
+import { useLanguage } from '@/lib/i18n';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Home },
-  { path: '/diagnosis', label: 'Crop Advisory', icon: Camera },
-  { path: '/market', label: 'Market Prices', icon: TrendingUp },
-  { path: '/schemes', label: 'Govt Schemes', icon: FileText },
-  { path: '/history', label: 'Help & History', icon: History },
-  { path: '/profile', label: 'Profile', icon: User },
-];
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -21,6 +13,16 @@ export function Navbar() {
   const profile = getProfile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { t } = useLanguage();
+
+  const navItems = [
+    { path: '/dashboard', key: 'dashboard', icon: Home },
+    { path: '/diagnosis', key: 'crop_advisory', icon: Camera },
+    { path: '/market', key: 'marketplace', icon: TrendingUp },
+    { path: '/schemes', key: 'govt_schemes', icon: FileText },
+    { path: '/history', key: 'help_history', icon: History },
+    { path: '/profile', key: 'profile', icon: User },
+  ];
 
   const handleLogout = () => {
     localStorage.clear();
@@ -66,7 +68,7 @@ export function Navbar() {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 mt-4">
           {navItems.map((item) => (
-            <NavItem key={item.path} item={item} />
+            <NavItem key={item.path} item={{ ...item, label: t(item.key) }} />
           ))}
         </nav>
 

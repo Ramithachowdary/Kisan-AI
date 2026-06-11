@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { saveProfile } from "@/lib/storage";
+import { useLanguage } from '@/lib/i18n';
 
 import { CropSelectModal } from "@/components/CropSelectModal";
 import { FloatingMic } from "@/components/FloatingMic";
 import { ChatPopup } from "@/components/ChatPopup";
+import { User, MapPin, Sprout, ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 const STATES = ["Karnataka", "Maharashtra", "Tamil Nadu", "Kerala", "Punjab", "Haryana"];
 const CROPS = ["Rice", "Wheat", "Tomato", "Potato", "Onion", "Sugarcane", "Cotton", "Maize"];
@@ -24,6 +26,7 @@ const LANGUAGES = ["English", "Hindi", "Kannada", "Tamil", "Telugu", "Marathi"];
 export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t, setLanguage } = useLanguage();
 
   const [step, setStep] = useState(1);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -40,14 +43,20 @@ export default function Onboarding() {
   });
 
   // -------------------------------------------------
-  // FETCH EXISTING PROFILE FROM BACKEND
+  // ROUTING GUARD & LOAD INITIAL PROFILE
   // -------------------------------------------------
   useEffect(() => {
+    const onboardingAllowed = sessionStorage.getItem("onboardingAllowed") === "true";
+    if (!onboardingAllowed) {
+      // If not explicitly triggered by registration, redirect to dashboard
+      navigate("/dashboard");
+      return;
+    }
+
     api
       .get("/user/profile")
       .then((res) => {
         const p = res.data;
-
         setFormData({
           name: p.name || "",
           state: p.state || "",
@@ -59,9 +68,9 @@ export default function Onboarding() {
         });
       })
       .catch(() => {
-        console.log("New user → onboarding starts fresh");
+        console.log("New user onboarding fresh");
       });
-  }, []);
+  }, [navigate]);
 
   // -------------------------------------------------
   // CROP SELECT
@@ -84,38 +93,38 @@ export default function Onboarding() {
   // SUBMIT TO BACKEND
   // -------------------------------------------------
   const submitProfile = async () => {
-  if (formData.mainCrops.length === 0) {
-    toast({ title: "Select at least one crop", variant: "destructive" });
-    return;
-  }
+    if (formData.mainCrops.length === 0) {
+      toast({ title: "Select at least one crop", variant: "destructive" });
+      return;
+    }
 
-  try {
-    // 1️⃣ Update profile in backend
-    await api.put("/user/profile/update", {
-      name: formData.name,
-      state: formData.state,
-      district: formData.district,
-      village: formData.village,
-      land_size: Number(formData.landSize),
-      crops: formData.mainCrops.join(","),
-      language: formData.language,
-    });
+    try {
+      // 1. Update profile in backend
+      await api.put("/user/profile/update", {
+        name: formData.name,
+        state: formData.state,
+        district: formData.district,
+        village: formData.village,
+        land_size: Number(formData.landSize),
+        crops: formData.mainCrops.join(","),
+        language: formData.language,
+      });
 
-    // 2️⃣ FETCH UPDATED PROFILE FROM BACKEND
-    const res = await api.get("/user/profile");
+      // 2. Fetch updated profile from backend
+      const res = await api.get("/user/profile");
 
-    // 3️⃣ SAVE PROFILE LOCALLY (THIS WAS MISSING)
-    saveProfile(res.data);
+      // 3. Save profile locally
+      saveProfile(res.data);
 
-    toast({ title: "Profile saved!" });
+      toast({ title: "Profile completed successfully!" });
 
-    // 4️⃣ NOW REDIRECT
-    navigate("/dashboard");
-  } catch (err) {
-    toast({ title: "Failed to save profile", variant: "destructive" });
-  }
-};
-
+      // 4. Remove access flag and navigate to dashboard
+      sessionStorage.removeItem("onboardingAllowed");
+      navigate("/dashboard");
+    } catch (err) {
+      toast({ title: "Failed to save profile", variant: "destructive" });
+    }
+  };
 
   // -------------------------------------------------
   // NEXT BUTTON HANDLER
@@ -131,8 +140,8 @@ export default function Onboarding() {
     }
 
     if (step === 2) {
-      if (!formData.state || !formData.district) {
-        toast({ title: "Select state & district", variant: "destructive" });
+      if (!formData.state || !formData.district || !formData.village) {
+        toast({ title: "Select state, district & village", variant: "destructive" });
         return;
       }
       setStep(3);
@@ -144,16 +153,17 @@ export default function Onboarding() {
     }
   };
 
-  // -------------------------------------------------
-  // UI
-  // -------------------------------------------------
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      {/* Floating Chat */}
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute -top-1/4 -right-1/4 w-96 h-96 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-1/4 -left-1/4 w-96 h-96 rounded-full bg-emerald-500/20 blur-3xl" />
+      </div>
+
       <FloatingMic onClick={() => setIsChatOpen(true)} hasMessages={false} />
       <ChatPopup isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} onImageUpload={() => {}} />
 
-      {/* Crop Modal */}
       <CropSelectModal
         isOpen={isCropModalOpen}
         onClose={() => setIsCropModalOpen(false)}
@@ -162,125 +172,230 @@ export default function Onboarding() {
       />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 25 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-lg relative"
       >
-        <Card className="p-8 space-y-6 shadow-2xl border-2 hover:border-primary/20 transition-all bg-gradient-to-br from-card via-card to-primary/5">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-primary">Kisan+</h1>
-            <p className="text-muted-foreground">Complete your profile</p>
+        <Card className="p-8 space-y-8 shadow-2xl border-2 hover:border-primary/20 bg-card overflow-hidden relative">
+          
+          {/* Header */}
+          <div className="text-center space-y-2 relative">
+            <h1 className="text-3xl font-extrabold tracking-tight text-primary flex items-center justify-center gap-2">
+              <span>🌾</span> Kisan+ Onboarding
+            </h1>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Help us customize Kisan+ for your farm's success.
+            </p>
           </div>
 
-          {/* Progress Bar */}
-          <div className="flex gap-2">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`h-2 flex-1 rounded-full ${s <= step ? "bg-primary" : "bg-muted"}`} />
-            ))}
+          {/* Progress Indicators & Tabs */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-2">
+              {[
+                { number: 1, label: "Basic Info", icon: User },
+                { number: 2, label: "Location", icon: MapPin },
+                { number: 3, label: "Farming Details", icon: Sprout },
+              ].map((s) => (
+                <div key={s.number} className="flex flex-col items-center gap-1.5 flex-1 relative">
+                  {/* Line connector */}
+                  {s.number > 1 && (
+                    <div className={`absolute top-4 left-[-50%] right-[50%] h-0.5 -z-10 ${s.number <= step ? "bg-primary" : "bg-muted"}`} />
+                  )}
+                  
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300 ${
+                      step >= s.number
+                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
+                        : "bg-background border-muted text-muted-foreground"
+                    }`}
+                  >
+                    {step > s.number ? <Check className="w-4 h-4" /> : <s.icon className="w-4 h-4" />}
+                  </div>
+                  <span className={`text-xs font-bold ${step >= s.number ? "text-primary font-extrabold" : "text-muted-foreground"}`}>
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Step 1 — Name */}
-          {step === 1 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <Label>Full Name</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter your name"
-              />
-            </motion.div>
-          )}
-
-          {/* Step 2 — Location */}
-          {step === 2 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <Label>State</Label>
-              <Select value={formData.state} onValueChange={(val) => setFormData((prev) => ({ ...prev, state: val }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Label>District</Label>
-              <Input
-                value={formData.district}
-                onChange={(e) => setFormData((prev) => ({ ...prev, district: e.target.value }))}
-                placeholder="Enter district"
-              />
-
-              <Label>Village</Label>
-              <Input
-                value={formData.village}
-                onChange={(e) => setFormData((prev) => ({ ...prev, village: e.target.value }))}
-                placeholder="Enter village"
-              />
-
-              <Label>Land Size (acres)</Label>
-              <Input
-                value={formData.landSize}
-                onChange={(e) => setFormData((prev) => ({ ...prev, landSize: e.target.value }))}
-                placeholder="e.g., 2.5"
-              />
-            </motion.div>
-          )}
-
-          {/* Step 3 — Crops + Language */}
-          {step === 3 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-              <Label>Main Crops</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {CROPS.map((crop) => (
-                  <label key={crop} className="flex items-center gap-2 p-2 border rounded hover:bg-muted cursor-pointer">
-                    <Checkbox checked={formData.mainCrops.includes(crop)} onCheckedChange={() => handleCropToggle(crop)} />
-                    <span className="text-sm">{crop}</span>
-                  </label>
-                ))}
-
-                <button
-                  onClick={() => setIsCropModalOpen(true)}
-                  className="flex items-center gap-2 p-2 border rounded border-dashed hover:border-primary"
+          {/* Form Content Steps with Animations */}
+          <div className="min-h-[220px]">
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div
+                  key="step-1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
                 >
-                  <span className="text-sm font-medium text-primary">+ Other</span>
-                </button>
-              </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('full_name')}</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      placeholder={t('enter_your_name')}
+                      className="py-6 text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">What should we call you when sharing farming tips?</p>
+                  </div>
+                </motion.div>
+              )}
 
-              <Label>Preferred Language</Label>
-              <Select
-                value={formData.language}
-                onValueChange={(val) => setFormData((prev) => ({ ...prev, language: val }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang} value={lang}>
-                      {lang}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </motion.div>
-          )}
+              {step === 2 && (
+                <motion.div
+                  key="step-2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('state')}</Label>
+                      <Select value={formData.state} onValueChange={(val) => setFormData((prev) => ({ ...prev, state: val }))}>
+                        <SelectTrigger className="py-6 text-sm">
+                          <SelectValue placeholder={t('select_state')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATES.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          {/* Buttons */}
-          <div className="flex gap-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('district')}</Label>
+                      <Input
+                        value={formData.district}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, district: e.target.value }))}
+                        placeholder={t('enter_district')}
+                        className="py-6 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('village')}</Label>
+                      <Input
+                        value={formData.village}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, village: e.target.value }))}
+                        placeholder={t('enter_village')}
+                        className="py-6 text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('land_size')} (acres)</Label>
+                      <Input
+                        value={formData.landSize}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, landSize: e.target.value.replace(/[^0-9.]/g, "") }))}
+                        placeholder={t('example_land_size')}
+                        className="py-6 text-sm"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div
+                  key="step-3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-5"
+                >
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('main_crops')}</Label>
+                    <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                      {CROPS.map((crop) => (
+                        <label
+                          key={crop}
+                          className={`flex items-center gap-2 p-2.5 border rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all ${
+                            formData.mainCrops.includes(crop) ? "border-primary bg-primary/5 text-primary" : "border-slate-200"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={formData.mainCrops.includes(crop)}
+                            onCheckedChange={() => handleCropToggle(crop)}
+                          />
+                          <span className="text-xs font-bold">{crop}</span>
+                        </label>
+                      ))}
+
+                      <button
+                        onClick={() => setIsCropModalOpen(true)}
+                        className="flex items-center justify-center gap-1.5 p-2.5 border border-dashed rounded-xl hover:border-primary text-primary font-bold transition-all text-xs"
+                      >
+                        <span>+ Other</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('preferred_language')}</Label>
+                    <Select
+                      value={formData.language}
+                      onValueChange={(val) => {
+                        setFormData((prev) => ({ ...prev, language: val }));
+                        setLanguage(val as any);
+                      }}
+                    >
+                      <SelectTrigger className="py-6 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang} value={lang}>
+                            {lang}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t">
             {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1">
-                Back
+              <Button
+                variant="outline"
+                onClick={() => setStep(step - 1)}
+                className="flex-1 py-6 font-bold flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
               </Button>
             )}
-            <Button onClick={nextStep} className="flex-1">
-              {step === 3 ? "Finish" : "Next"}
+            
+            <Button
+              onClick={nextStep}
+              className="flex-1 py-6 font-extrabold flex items-center justify-center gap-2"
+            >
+              {step === 3 ? (
+                <>
+                  {t('finish')} <Check className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  {t('next')} <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           </div>
+
         </Card>
       </motion.div>
     </div>

@@ -11,14 +11,23 @@ export const isSpeechSynthesisSupported = (): boolean => {
 export class SpeechRecognitionService {
   private recognition: any;
   private isListening = false;
+  private language = 'en-IN';
 
-  constructor() {
+  constructor(language = 'en-IN') {
+    this.language = language;
     if (isSpeechRecognitionSupported()) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       this.recognition = new SpeechRecognition();
       this.recognition.continuous = false;
       this.recognition.interimResults = true;
-      this.recognition.lang = 'en-IN';
+      this.recognition.lang = this.language;
+    }
+  }
+
+  setLanguage(language: string) {
+    this.language = language;
+    if (this.recognition) {
+      this.recognition.lang = language;
     }
   }
 
@@ -78,13 +87,13 @@ export class SpeechSynthesisService {
       return;
     }
 
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     utterance.rate = 0.9;
     utterance.pitch = 1;
+    utterance.volume = 1;
     
     window.speechSynthesis.speak(utterance);
   }

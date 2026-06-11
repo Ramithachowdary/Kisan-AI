@@ -5,37 +5,39 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getProfile } from '@/lib/storage';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/lib/i18n';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const profile = getProfile();
+  const { t } = useLanguage();
 
   const features = [
     {
       icon: Camera,
-      title: 'Crop Diagnosis',
-      description: 'Identify pests & diseases instantly',
+      title: t('ai_crop_diagnosis'),
+      description: t('ai_crop_diagnosis_desc'),
       color: 'bg-primary',
       route: '/diagnosis'
     },
     {
       icon: TrendingUp,
-      title: 'Market Prices',
-      description: 'Real-time crop prices & trends',
+      title: t('live_market_prices'),
+      description: t('live_market_prices_desc'),
       color: 'bg-secondary',
       route: '/market'
     },
     {
       icon: FileText,
-      title: 'Government Schemes',
-      description: 'Find subsidies & benefits',
+      title: t('government_schemes'),
+      description: t('government_schemes_desc'),
       color: 'bg-brown',
       route: '/schemes'
     },
     {
       icon: HelpCircle,
-      title: 'Help & History',
-      description: 'Tutorial & past queries',
+      title: t('help_history'),
+      description: t('help_history_desc'),
       color: 'bg-accent',
       route: '/help'
     }
@@ -52,8 +54,8 @@ export default function Dashboard() {
         >
           {/* Page Header */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {profile?.name || 'Farmer'}!</p>
+            <h1 className="text-3xl font-bold text-primary">{t('dashboard')}</h1>
+            <p className="text-muted-foreground">{t('welcome_back').replace('{{name}}', profile?.name || t('farmer'))}</p>
           </div>
 
           {/* Welcome message with animation */}
@@ -63,10 +65,10 @@ export default function Dashboard() {
             className="text-center space-y-2 mb-2 mt-8"
           >
             <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              How can I help you today?
+              {t('how_can_i_help')}
             </h2>
             <p className="text-muted-foreground">
-              Tap the mic button or choose a feature below
+              {t('quick_tip')}
             </p>
           </motion.div>
 

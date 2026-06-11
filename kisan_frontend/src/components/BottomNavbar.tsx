@@ -2,22 +2,25 @@ import { NavLink } from 'react-router-dom';
 import { Camera, TrendingUp, FileText, HelpCircle, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n';
 
 interface BottomNavbarProps {
   onMicClick: () => void;
 }
 
 const navItems = [
-  { path: '/diagnosis', label: 'Diagnosis', icon: Camera },
-  { path: '/market', label: 'Market', icon: TrendingUp },
+  { path: '/diagnosis', key: 'diagnosis', icon: Camera },
+  { path: '/market', key: 'market', icon: TrendingUp },
 ];
 
 const navItemsRight = [
-  { path: '/schemes', label: 'Schemes', icon: FileText },
-  { path: '/help', label: 'Help', icon: HelpCircle },
+  { path: '/schemes', key: 'schemes', icon: FileText },
+  { path: '/help', key: 'help', icon: HelpCircle },
 ];
 
 export function BottomNavbar({ onMicClick }: BottomNavbarProps) {
+  const { t } = useLanguage();
+
   return (
     <motion.nav 
       initial={{ y: 100 }}
@@ -39,7 +42,7 @@ export function BottomNavbar({ onMicClick }: BottomNavbarProps) {
             }
           >
             <item.icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="text-xs font-medium">{t(item.key)}</span>
           </NavLink>
         ))}
 
@@ -78,7 +81,7 @@ export function BottomNavbar({ onMicClick }: BottomNavbarProps) {
             }
           >
             <item.icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="text-xs font-medium">{t(item.key)}</span>
           </NavLink>
         ))}
       </div>

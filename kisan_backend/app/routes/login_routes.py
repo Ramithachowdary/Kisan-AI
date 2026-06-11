@@ -39,12 +39,65 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SignupRequest(BaseModel):
+    phone: str
+    password: str
+
+
+@router.post("/signup")
+def signup(
+    payload: SignupRequest,
+    db: Session = Depends(get_db)
+):
+    phone = payload.phone
+    password = payload.password
+
+    if not phone or not password:
+        raise HTTPException(status_code=400, detail="Missing phone or password")
+
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.phone == phone).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Mobile number already registered. Please login.")
+
+    # Create new user
+    user = User(
+        firebase_uid=None,
+        phone=phone,
+        name=None,
+        password_hash=hash_password(password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    # Issue tokens
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_raw = create_refresh_token()
+    refresh_hash = hash_token(refresh_raw)
+
+    refresh_item = RefreshToken(
+        user_id=user.id,
+        token_hash=refresh_hash,
+        created_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(days=30),
+    )
+
+    db.add(refresh_item)
+    db.commit()
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_raw,
+        "profile_complete": False
+    }
+
+
 @router.post("/login")
 def login(
     payload: LoginRequest,
     db: Session = Depends(get_db)
 ):
-
     phone = payload.phone
     password = payload.password
 
@@ -54,20 +107,11 @@ def login(
     user = db.query(User).filter(User.phone == phone).first()
 
     if not user:
-        # Register new user with provided phone and password
-        user = User(
-            firebase_uid=None,
-            phone=phone,
-            name=None,
-            password_hash=hash_password(password),
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    else:
-        # Verify password
-        if not verify_password(password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Mobile number not registered. Please sign up.")
+    
+    # Verify password
+    if not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Issue tokens
     access_token = create_access_token({"sub": str(user.id)})
@@ -90,3 +134,4 @@ def login(
         "refresh_token": refresh_raw,
         "profile_complete": is_profile_complete(user)
     }
+

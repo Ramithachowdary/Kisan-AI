@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { getProfile } from "@/lib/storage";
+import { LanguageProvider } from "@/lib/i18n";
 import { useState } from "react";
 import { FloatingMic } from "./components/FloatingMic";
 import { ChatPopup } from "./components/ChatPopup";
@@ -11,16 +12,18 @@ import { TopNavbar } from "./components/TopNavbar";
 import { BottomNavbar } from "./components/BottomNavbar";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Diagnosis from "./pages/Diagnosis";
-import Market from "./pages/Market";
+import Marketplace from "./pages/Marketplace";
 import Schemes from "./pages/Schemes";
 import HelpAndHistory from "./pages/HelpAndHistory";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import AuthFlow from "./pages/AuthFlow";
 import { Navbar } from "./components/Navbar";
+
 
 const queryClient = new QueryClient();
 
@@ -103,34 +106,37 @@ const PublicLayout = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes with TopNavbar and floating mic */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/auth" element={<AuthFlow />} />
-          </Route>
-          
-          {/* Protected routes with TopNavbar, Sidebar (desktop), and BottomNavbar (mobile) */}
-          <Route element={<ProtectedRoute><ProtectedLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/diagnosis" element={<Diagnosis />} />
-            <Route path="/market" element={<Market />} />
-            <Route path="/schemes" element={<Schemes />} />
-            <Route path="/help" element={<HelpAndHistory />} />
-            <Route path="/history" element={<HelpAndHistory />} />
-            <Route path="/profile" element={<Profile />} />
-          </Route>
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes with TopNavbar and floating mic */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/auth" element={<AuthFlow />} />
+            </Route>
+            
+            {/* Protected routes with TopNavbar, Sidebar (desktop), and BottomNavbar (mobile) */}
+            <Route element={<ProtectedRoute><ProtectedLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/diagnosis" element={<Diagnosis />} />
+              <Route path="/market" element={<Marketplace />} />
+              <Route path="/schemes" element={<Schemes />} />
+              <Route path="/help" element={<HelpAndHistory />} />
+              <Route path="/history" element={<HelpAndHistory />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 

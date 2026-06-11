@@ -89,3 +89,21 @@ class RefreshToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True))
     user = relationship("User")
+
+
+class Product(Base):
+    __tablename__ = 'products'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    title = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    unit = Column(String, nullable=False, default="/kg")
+    location = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    image = Column(String, nullable=True)
+    emoji = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship('User')
+

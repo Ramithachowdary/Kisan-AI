@@ -1,13 +1,21 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getProfile } from '@/lib/storage';
+import { useLanguage, SUPPORTED_LANGUAGES, AppLanguage } from '@/lib/i18n';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function TopNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const profile = getProfile();
   const isAuthenticated = !!profile;
+  const { t, language, setLanguage } = useLanguage();
   
   // Pages where user is not logged in
   const publicPages = ['/', '/login', '/onboarding'];
@@ -27,11 +35,36 @@ export function TopNavbar() {
           onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
         >
           <span className="text-2xl">🌾</span>
-          <span className="text-xl font-bold text-primary">Kisan+</span>
+          <span className="text-xl font-bold text-primary">{t('app_name')}</span>
         </div>
 
-        {/* Right - Auth buttons */}
+        {/* Right - Language Selector + Auth buttons */}
         <div className="flex items-center gap-2">
+          {/* Language Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                title={t('language_selector_label')}
+                className="hover:bg-primary/10"
+              >
+                <Globe className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <DropdownMenuItem
+                  key={lang}
+                  onClick={() => setLanguage(lang as AppLanguage)}
+                  className={`cursor-pointer ${language === lang ? 'bg-primary/10 font-semibold' : ''}`}
+                >
+                  {lang}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {!isAuthenticated ? (
             <>
               <Button
@@ -40,14 +73,14 @@ export function TopNavbar() {
                 onClick={() => navigate('/login')}
                 className="hover:bg-primary/10"
               >
-                Login
+                {t('login')}
               </Button>
               <Button
                 size="sm"
                 onClick={() => navigate('/login')}
                 className="bg-primary hover:bg-primary/90"
               >
-                Create Account
+                {t('create_account')}
               </Button>
             </>
           ) : (
@@ -57,7 +90,7 @@ export function TopNavbar() {
                 size="icon"
                 onClick={() => navigate('/profile')}
                 className="hover:bg-primary/10"
-                title="Profile"
+                title={t('profile')}
               >
                 <User className="h-5 w-5" />
               </Button>
@@ -68,7 +101,7 @@ export function TopNavbar() {
                 className="hover:bg-destructive/10 hover:text-destructive gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline">{t('logout')}</span>
               </Button>
             </>
           )}

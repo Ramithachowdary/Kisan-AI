@@ -66,6 +66,7 @@ const categoryIcons = {
 
 export default function HelpAndHistory() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [chatMessages, setChatMessages] = useState([
     {
       time: new Date().toLocaleTimeString('en-IN'),
@@ -106,9 +107,9 @@ export default function HelpAndHistory() {
 
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Help & History</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('help_history')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Get support and view your recent activities
+            {t('help_history_desc')}
           </p>
         </div>
 
@@ -123,7 +124,7 @@ export default function HelpAndHistory() {
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-5">
                 <Phone className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold">Emergency Contacts</h2>
+                <h2 className="text-xl font-bold">{t('emergency_contacts')}</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -161,7 +162,7 @@ export default function HelpAndHistory() {
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-5">
                 <MessageCircle className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold">Frequently Asked Questions</h2>
+                <h2 className="text-xl font-bold">{t('faq_title')}</h2>
               </div>
 
               <Accordion type="single" collapsible className="w-full">
@@ -188,7 +189,7 @@ export default function HelpAndHistory() {
             <Card className="p-6 bg-gradient-to-br from-card via-card to-primary/5">
               <div className="flex items-center gap-2 mb-3">
                 <Bot className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold">Voice Assistant Tips</h2>
+                <h2 className="text-xl font-bold">{t('voice_assistant_tips')}</h2>
               </div>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>• Click the microphone icon to start voice conversations</p>
@@ -204,9 +205,9 @@ export default function HelpAndHistory() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Recent Activity</h2>
+              <h2 className="text-2xl font-bold text-foreground">{t('recent_activity')}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Your recent queries and interactions
+                {t('recent_activity_desc')}
               </p>
             </div>
             {history.length > 0 && (
@@ -228,9 +229,9 @@ export default function HelpAndHistory() {
             >
               <Card className="p-12 text-center">
                 <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No History Yet</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('no_history_yet')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Your queries and activities will appear here
+                  {t('history_empty_message')}
                 </p>
               </Card>
             </motion.div>

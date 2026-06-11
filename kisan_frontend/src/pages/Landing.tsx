@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Mic, Leaf, TrendingUp, FileText, ArrowRight, LogIn, UserPlus } from 'lucide-react';
+import { Mic, Leaf, TrendingUp, FileText, ArrowRight, LogIn, UserPlus, ShoppingCart } from 'lucide-react';
 import { getProfile } from '@/lib/storage';
+import { useLanguage } from '@/lib/i18n';
 
 export default function Landing() {
   const navigate = useNavigate();
   const hasProfile = !!getProfile();
+  const { t } = useLanguage();
 
   const features = [
     {
@@ -23,6 +25,11 @@ export default function Landing() {
       icon: FileText,
       title: 'Government Schemes',
       description: 'Find subsidies & benefits instantly'
+    },
+    {
+      icon: ShoppingCart,
+      title: 'Kisan+ Marketplace',
+      description: 'List your produce to sell, manage your listings (add/delete), or purchase from other farmers.'
     }
   ];
 
@@ -145,7 +152,7 @@ export default function Landing() {
               transition={{ delay: 0.5 }}
               className="text-5xl md:text-7xl font-bold text-foreground"
             >
-              Welcome to <span className="text-primary">Kisan+</span>
+              {t('hero_welcome').split('Kisan+')[0]} <span className="text-primary">Kisan+</span>
             </motion.h1>
             
             <motion.p
@@ -154,7 +161,7 @@ export default function Landing() {
               transition={{ delay: 0.7 }}
               className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Your Smart Farming Partner
+              {t('smart_farming_partner')}
             </motion.p>
 
             <motion.p
@@ -163,7 +170,7 @@ export default function Landing() {
               transition={{ delay: 0.9 }}
               className="text-lg text-muted-foreground max-w-xl mx-auto"
             >
-              Diagnose your crop, track prices, discover schemes — all by voice
+              {t('hero_description')}
             </motion.p>
           </div>
 
@@ -179,7 +186,7 @@ export default function Landing() {
               onClick={() => navigate('/login')}
               className="text-lg px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-105"
             >
-              Get Started
+              {t('get_started')}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             
@@ -190,7 +197,7 @@ export default function Landing() {
               className="text-lg px-8 py-6 rounded-2xl hover:bg-primary/10 hover:border-primary"
             >
               <LogIn className="mr-2 h-5 w-5" />
-              Login
+              {t('login')}
             </Button>
           </motion.div>
 
@@ -199,7 +206,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.3 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-16"
             id="how-it-works"
           >
             {features.map((feature, i) => (
@@ -230,7 +237,7 @@ export default function Landing() {
             <h2 className="text-3xl md:text-4xl font-bold">Simple. Fast. Voice-First.</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              {['Tap the Mic', 'Speak Your Query', 'Get Instant Results'].map((step, i) => (
+              {[t('hero_step_one'), t('hero_step_two'), t('hero_step_three')].map((step, i) => (
                 <div key={i} className="text-center space-y-3">
                   <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto">
                     {i + 1}

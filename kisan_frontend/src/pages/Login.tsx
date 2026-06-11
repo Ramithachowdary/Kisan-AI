@@ -41,15 +41,11 @@ export default function Login() {
       saveProfile(profileRes.data);
 
       toast({ title: "Login Successful!" });
-
-      if (res.data.profile_complete === false) {
-        navigate("/onboarding");
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (err) {
+      navigate("/dashboard");
+    } catch (err: any) {
       console.error("LOGIN ERROR:", err);
-      toast({ title: "Failed to login", variant: "destructive" });
+      const errorMsg = err.response?.data?.detail || "Failed to login";
+      toast({ title: errorMsg, variant: "destructive" });
     }
   };
 
@@ -79,13 +75,13 @@ export default function Login() {
       >
         <Button
           variant="ghost"
-          onClick={() => navigate("/landing")}
+          onClick={() => navigate("/")}
           className="mb-4 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
         </Button>
 
-        <Card className="p-8 space-y-6 shadow-2xl border-2 hover:border-primary/20">
+        <Card className="p-8 space-y-6 shadow-2xl border-2 hover:border-primary/20 bg-card">
 
           <div className="text-center space-y-2">
             <motion.div
@@ -97,14 +93,14 @@ export default function Login() {
             </motion.div>
 
             <h1 className="text-3xl font-bold text-primary">Welcome Back</h1>
-            <p className="text-muted-foreground">Login or create account with your mobile number and password.</p>
+            <p className="text-muted-foreground">Sign in to your account with your mobile number and password.</p>
           </div>
 
             <div className="space-y-4">
               <Label>Mobile Number</Label>
               <Input
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
                 maxLength={10}
                 placeholder="10 digit mobile"
                 className="text-lg py-3"
@@ -121,10 +117,22 @@ export default function Login() {
 
               <Button
                 onClick={handleLogin}
-                className="w-full py-6 text-lg"
+                className="w-full py-6 text-lg font-bold"
               >
-                <LogIn className="h-5 w-5 mr-2" /> Login / Create Account
+                <LogIn className="h-5 w-5 mr-2" /> Sign In
               </Button>
+
+              <div className="text-center pt-2">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="text-primary font-bold hover:underline"
+                  >
+                    Sign Up
+                  </button>
+                </p>
+              </div>
             </div>
 
         </Card>

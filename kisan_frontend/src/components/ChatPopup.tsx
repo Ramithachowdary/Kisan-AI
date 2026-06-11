@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/lib/types';
 import { SpeechRecognitionService, SpeechSynthesisService, isSpeechRecognitionSupported } from '@/lib/speech';
+import { useLanguage } from '@/lib/i18n';
 import { DiagnosisCard } from './DiagnosisCard';
 import { MarketCard } from './MarketCard';
 import { SchemeCard } from './SchemeCard';
@@ -27,8 +28,13 @@ export function ChatPopup({ isOpen, onClose, onImageUpload }: ChatPopupProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const recognitionService = useRef(new SpeechRecognitionService());
+  const { language } = useLanguage();
+  const recognitionService = useRef(new SpeechRecognitionService('en-IN'));
   const ttsService = useRef(new SpeechSynthesisService());
+
+  useEffect(() => {
+    recognitionService.current.setLanguage(language === 'English' ? 'en-IN' : language === 'Tamil' ? 'ta-IN' : language === 'Hindi' ? 'hi-IN' : language === 'Kannada' ? 'kn-IN' : language === 'Telugu' ? 'te-IN' : 'mr-IN');
+  }, [language]);
 
   useEffect(() => {
     if (scrollRef.current) {
